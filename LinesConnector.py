@@ -10,7 +10,7 @@ def main(args):
 	pygame.init()
 
 	screen = pygame.display.set_mode((W_WIDTH, W_HEIGHT))
-	pygame.display.set_caption('Connector Line')
+	pygame.display.set_caption('Line\'s Connector')
 
 	game = Game(screen)
 
