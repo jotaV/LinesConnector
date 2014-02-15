@@ -43,11 +43,15 @@ class Game(object):
 		for player in self.players:
 			Score(player, self.scores)
 
+		self.time = 0
 		while True:
 			self.loop()
 
 	def loop(self):
 		dt = self.clock.tick(30)
+		self.time += dt / 1000.
+
+		#print str(self.time) + "s"
 
 		self.screen.fill((0, 0, 0))
 
@@ -249,13 +253,16 @@ class Cube(pygame.sprite.Sprite):
 		pass
 
 	def onAnimation(self, dt):
-		self.width = math.linearTween(self.time, 1, self.width, 0.2)
+		# def linearTween (t, b, c, d):
+		# 	return c*t/d + b;
+		self.width = math.linearTween(self.time, 1, BLOCK_SIZE - 4, 0.5)
 		self.time += dt
 
+		self.image.fill((0,0,0))
 		pygame.draw.rect(self.image, self.color, self.image.get_rect(x = 0, y = 0), int(self.width)) #width = int(math.floor(self.width)))
 
-		if self.width + dt * 30 >= BLOCK_SIZE - 4:
-			self.update = self.offAnimation
+		#if self.time - dt >= totalTime:
+		#	self.update = self.offAnimation
 
 
 class Score(pygame.sprite.Sprite):
@@ -310,7 +317,30 @@ class Player(object):
 	def __str__(self):
 		return "Jogador %d" % (self.id + 1)
 
-def linearTween (t, b, c, d):
-	return c*t/d + b
+def linearTween(t, b, c, d):
+	t = 1 if t > d else t/d
+	return c*t + b;
 
+def easeInCirc(t, b, c, d):
+	t = 1 if t > d else t/d
+	return -c * (math.sqrt(1 - t * t) - 1) + b
+
+def easeOutBounce(t, b, c, d):
+	t = 1 if t > d else t / d
+	if (t) < (1/2.75):
+		return c*(7.5625*t*t) + b
+
+	elif t < (2/2.75):
+		t -= (1.5/2.75)
+		return c*(7.5625*t)*t + .75 + b
+
+	elif t < (2.5/2.75):
+		t -= (2.25/2.75)
+		return c*(7.5625*t)*t + .9375 + b;
+	else:
+		t -= (2.625/2.75)
+		return c*(7.5625*t)*t + .984375 + b;
+
+math.easeInCirc = easeInCirc
 math.linearTween = linearTween
+math.easeOutBounce = easeOutBounce
