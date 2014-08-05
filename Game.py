@@ -1,6 +1,8 @@
 #-*- coding: latin1 -*-
 
 import pygame, sys, math
+
+from PlayerConection import *
 from header import *
 
 class Game(object):
@@ -19,7 +21,7 @@ class Game(object):
 
 		while self.waiting:
 			for event in pygame.event.get():
-				if event.type == pygame.MOUSEBUTTONUP:
+				if event.type == pygame.MOUSEBUTTONUP and type(self.playerCollection) == PlayerServer:
 					self.waiting = False
 
 		print "iniciando jogo"
@@ -47,6 +49,9 @@ class Game(object):
 		while True:
 			self.loop()
 
+	def exit(self, playerId):
+		sys.exit(1)
+
 	def loop(self):
 		dt = self.clock.tick(30)
 		self.time += dt / 1000.
@@ -55,7 +60,8 @@ class Game(object):
 
 		self.screen.fill((0, 0, 0))
 
-		self.events()
+		if self.events():
+			return
 
 		self.lines.update()
 		self.scores.update(dt / 1000.)
@@ -73,14 +79,15 @@ class Game(object):
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				self.playerCollection.onExit()
-				sys.exit(1)
+				return True
 
 			if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
 				self.playerCollection.onExit()
-				sys.exit(1)
+				return True
 
 			if event.type == pygame.MOUSEBUTTONUP:
 				self.onClick()
+				return False
 
 	def onClick(self):
 		mouseSprite = pygame.sprite.Sprite()

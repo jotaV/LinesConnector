@@ -16,7 +16,7 @@ class PlayerCollection(object):
 	def onSet(self, row, col):
 		self.game.set(row, col)
 
-	def onExit(self):
+	def onExit(self, id):
 		pass
 
 class PlayerServer(PlayerCollection):
@@ -25,6 +25,8 @@ class PlayerServer(PlayerCollection):
 		self.playersIds = [0]
 		self.game = game
 		self.game.playersCount = 1
+
+		self.kiked = False
 
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -40,6 +42,7 @@ class PlayerServer(PlayerCollection):
 		self.listing = True
 
 		self.thread = threading.Thread(target = self.listenPlayers) #tread
+		self.thread.daemon = True
 		self.thread.start()
 
 		self.game.wait(self)
@@ -68,26 +71,38 @@ class PlayerServer(PlayerCollection):
 		self.send('s', row, col)
 
 	def onExit(self):
-		self.send('e', self.playersIds[0])
+		self.receiving = False
+	
+		for player in self.playersIds:
+			self.send('e', player)
+
+		sys.exit(1)
 
 	#Funçoes de rede
 	def listenPlayers(self):
 		self.conns = []
+		self.threadConns = []
 		self.receiving = True
+		self.listing = True
 
-		#while self.listing:
-		conn, addr = self.socket.accept()
-		print "jogador " + str(self.game.playersCount) + " adicionado"
-		self.game.playersCount += 1
-		self.conns.append(conn)
+		while self.listing:
+			conn, addr = self.socket.accept()
+			print "jogador " + str(self.game.playersCount) + " adicionado"
+			self.game.playersCount += 1
+			self.conns.append(conn)
 
-		conn.sendall(struct.pack("c i", "o", self.game.playersCount - 1))
+			for c in self.conns:
+				c.sendall(struct.pack("c i", "o", self.game.playersCount - 1))
 
-		thread = threading.Thread(target = self.receive, args = (conn,)) #tread
-		thread.start()
+			threadConn = threading.Thread(target = self.receive, args = (conn,)) #tread
+			threadConn.daemon = True
+			threadConn.start()
 
-		if self.game.playersCount == 4:
-			self.game.waiting = False
+			self.threadConns.append(threadConn)
+
+			if self.game.playersCount == 4:
+				self.listing = False
+				self.game.waiting = False
 
 	def send(self, function, *args):
 		print "enviando:", function, args
@@ -107,12 +122,12 @@ class PlayerServer(PlayerCollection):
 
 			elif data[0] == "e":
 				a, player = struct.unpack("c i", data)
-				self.onExit(player)
 				self.game.exit(player)
+				return
 
 
 class PlayerClient(PlayerCollection):
-	def __init__(self, game, host = socket.gethostname()):
+	def __init__(self, game, count = 1, host = socket.gethostname()):
 		self.currentPlayerId = 0
 		self.playersIds = []
 		self.game = game
@@ -126,6 +141,7 @@ class PlayerClient(PlayerCollection):
 		self.socket.connect((host, PORT))
 
 		self.thread = threading.Thread(target = self.receive) #tread
+		self.thread.daemon = True
 		self.thread.start()
 
 		self.game.wait(self)
@@ -150,8 +166,13 @@ class PlayerClient(PlayerCollection):
 	def set(self, row, col):
 		self.game.set(row, col)
 
-	def onExit(self, playerId):
-		self.send('e', self.playersIds[0])
+	def onExit(self):
+		self.receiving = False
+
+		for player in self.playersIds:
+			self.send('e', player)
+
+		sys.exit(1)
 
 	#Funçoes de rede
 	def send(self, function, *args):
@@ -183,3 +204,4 @@ class PlayerClient(PlayerCollection):
 				elif data[0] == "e":
 					a, player = struct.unpack("c i", data)
 					self.game.exit(player)
+					return

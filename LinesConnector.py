@@ -3,6 +3,7 @@
 import sys, pygame
 
 from Game import *
+from Lobby import *
 from PlayerConection import *
 from header import *
 
@@ -12,8 +13,8 @@ def main(args):
 	screen = pygame.display.set_mode((W_WIDTH, W_HEIGHT))
 	pygame.display.set_caption('Line\'s Connector')
 
+	screen.fill((0, 0, 0))
 	game = Game(screen)
-
 
 	if len(sys.argv) > 1 and sys.argv[1] == "server":
 	 	PlayerServer(game)
@@ -29,7 +30,7 @@ def main(args):
 		PlayerCollection(game, int(sys.argv[1]))
 
 	else:
-		PlayerCollection(game, 2)
+		PlayerCollection(game, 4)
 
 if __name__ == '__main__':
 	main(sys.argv)
